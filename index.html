@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Majlis Jamiyaat AlBurhan - Performance Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            /* break-inside: avoid; */
+        }
+
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a365d 0%, #2d3748 50%, #1a202c 100%);
+            color: #2d3748;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .islamic-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            background-image:
+                radial-gradient(circle at 25% 25%, #d4af37 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, #d4af37 2px, transparent 2px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5530 0%, #38a169 50%, #48bb78 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .header h1 {
+            font-family: 'Amiri', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header .subtitle {
+            font-size: 1.3rem;
+            font-weight: 400;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .period {
+            font-size: 1rem;
+            margin-top: 10px;
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .kpi-card.total-reach {
+            border-left-color: #3182ce;
+            --accent-color: #3182ce;
+        }
+
+        .kpi-card.participation {
+            border-left-color: #38a169;
+            --accent-color: #38a169;
+        }
+
+        .kpi-card.wasooli {
+            border-left-color: #d69e2e;
+            --accent-color: #d69e2e;
+        }
+
+        .kpi-card.retention {
+            border-left-color: #9f7aea;
+            --accent-color: #9f7aea;
+        }
+
+        .kpi-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--accent-color), #2d3748);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        .kpi-subtitle {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-3px);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+        }
+
+        .full-width-chart {
+            grid-column: 1 / -1;
+        }
+
+        .insights-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .insights-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        .insights-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #38a169, #48bb78);
+            border-radius: 2px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 4px solid #38a169;
+        }
+
+        .insight-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .insight-text {
+            font-size: 0.95rem;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .course-timeline {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .timeline-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #38a169, #48bb78);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-left: 25px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -37px;
+            top: 25px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #38a169;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px #38a169;
+        }
+
+        .timeline-date {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #38a169;
+            margin-bottom: 5px;
+        }
+
+        .timeline-course {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .timeline-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .footer {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #38a169, #48bb78);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Amiri', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .kpi-number {
+                font-size: 2.5rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="islamic-pattern"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>مجلس جامعات البرھان پشاور</h1>
+            <div class="subtitle">Majlis Jamiyaat AlBurhan - Peshawar</div>
+            <div class="period">Performance Dashboard | March 2024 - July 2025</div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card total-reach">
+                <div class="kpi-number">1,509</div>
+                <div class="kpi-label">Total Registrations</div>
+                <div class="kpi-subtitle">Across all courses</div>
+            </div>
+            <div class="kpi-card participation">
+                <div class="kpi-number">351</div>
+                <div class="kpi-label">Active Participants</div>
+                <div class="kpi-subtitle">23.3% participation rate</div>
+            </div>
+            <div class="kpi-card wasooli">
+                <div class="kpi-number">137</div>
+                <div class="kpi-label">Wasooli Achieved</div>
+                <div class="kpi-subtitle">39% conversion rate</div>
+            </div>
+            <div class="kpi-card retention">
+                <div class="kpi-number">76</div>
+                <div class="kpi-label">Jamiyaat Members</div>
+                <div class="kpi-subtitle">65% of wasooli retained</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Registration vs Participation</div>
+                <div class="chart-wrapper">
+                    <canvas id="participationChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Wasooli Effectiveness Trend</div>
+                <div class="chart-wrapper">
+                    <canvas id="wasooliChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container full-width-chart">
+                <div class="chart-title">Course Content Areas Distribution</div>
+                <div class="chart-wrapper">
+                    <canvas id="contentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Timeline -->
+        <div class="course-timeline">
+            <div class="timeline-title">Course Journey Timeline</div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">March 2024</div>
+                    <div class="timeline-course">Jamiyat Tarbiyah Camp Islamabad (48 hours)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 14 Registrations</span>
+                        <span class="stat-item">👥 8 Participants</span>
+                        <span class="stat-item">🎯 5 Wasooli</span>
+                        <span class="stat-item">⭐ 5 Members</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">June 2024</div>
+                    <div class="timeline-course">Jamiyat Tarbiyah Camp Peshawar (48 hours)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 70 Registrations</span>
+                        <span class="stat-item">👥 42 Participants</span>
+                        <span class="stat-item">🎯 6 Wasooli</span>
+                        <span class="stat-item">⭐ 2 Members</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">July 2024</div>
+                    <div class="timeline-course">Jamiyat Murabbi Training Peshawar (2 weeks)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 30 Registrations</span>
+                        <span class="stat-item">👥 15 Participants</span>
+                        <span class="stat-item">🎯 13 Wasooli</span>
+                        <span class="stat-item">⭐ 10 Members</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">August 2024</div>
+                    <div class="timeline-course">Jamiyat Summer Camp Peshawar (7 days)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 60 Registrations</span>
+                        <span class="stat-item">👥 25 Participants</span>
+                        <span class="stat-item">🎯 12 Wasooli</span>
+                        <span class="stat-item">⭐ 7 Members</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">Nov-Dec 2024</div>
+                    <div class="timeline-course">Prophetic Wisdom Peshawar (Murabbis Training) (8 weeks)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 40 Registrations</span>
+                        <span class="stat-item">👥 19 Participants</span>
+                        <span class="stat-item">🎯 14 Wasooli</span>
+                        <span class="stat-item">⭐ 14 Members</span>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-date">Feb-Apr 2025</div>
+                    <div class="timeline-course">Prophetic Wisdom Peshawar Batch 1 (10 weeks)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 1,120 Registrations</span>
+                        <span class="stat-item">👥 170 Participants</span>
+                        <span class="stat-item">🎯 47 Wasooli</span>
+                        <span class="stat-item">⭐ 18 Members</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">April - June 2025</div>
+                    <div class="timeline-course">Jamiyat Study Circle (6 weeks)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 35 Registrations</span>
+                        <span class="stat-item">👥 27 Participants</span>
+                        <span class="stat-item">🎯 20 Wasooli</span>
+                        <span class="stat-item">⭐ 20 Members</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">July 2025</div>
+                    <div class="timeline-course">Summer Course phase 1 (5 days)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📝 140 Registrations</span>
+                        <span class="stat-item">👥 45 Participants</span>
+                        <!-- <span class="stat-item">🎯 Wasooli</span> -->
+                        <span class="stat-item">⭐ Members</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Aug 2025</div>
+                    <div class="timeline-course">Summer Camp Phase 2 (Continuation of Phase 1)</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">🎯 20 Wasooli</span>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">Upcoming</div>
+                    <div class="timeline-course">Seerat Workshop, Seerat Circles, and a 2-month course</div>
+                    <div class="timeline-stats">
+                        <span class="stat-item">📅 Planned</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        <div class="insights-section">
+            <div class="insights-title">Key Strategic Insights</div>
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-title">🎯 Wasooli Excellence</div>
+                    <div class="insight-text">Murabbi Training achieved exceptional 87% wasooli rate (13/15),
+                        demonstrating the power of intensive, specialized programs for committed participants.</div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-title">📈 Scale vs Quality</div>
+                    <div class="insight-text">While Prophetic Wisdom Batch 1 reached massive scale (1,120
+                        registrations), the wasooli rate was lower (28%), suggesting optimization opportunities for
+                        large-scale programs.</div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-title">🏆 Retention Success</div>
+                    <div class="insight-text">100% wasooli-to-member conversion in specialized courses (Murabbis: 14/14,
+                        Study Circle: 20/20) shows the effectiveness of targeted content delivery.</div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-title">🎓 Content Impact</div>
+                    <div class="insight-text">IDS, Seerat, and Islahi content shows strongest retention rates, while
+                        traditional Tarbiyah content may need refreshed delivery methods.</div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-title">📊 Participation Patterns</div>
+                    <div class="insight-text">Average 23% participation rate suggests need for better pre-course
+                        engagement and commitment mechanisms to reduce drop-offs.</div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-title">🔮 Future Strategy</div>
+                    <div class="insight-text">Focus on mid-sized courses (30-60 registrations) with specialized content
+                        for optimal balance of reach and effectiveness.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <!-- <div class="footer">
+            <div class="footer-content">
+                <div class="logo-section">
+                    <div class="logo">ج</div>
+                    <div>
+                        <div style="font-size: 1.2rem; font-weight: 600;">مجلس جامعات البرھان پشاور</div>
+                        <div style="font-size: 0.9rem; opacity: 0.8;">Building Tomorrow's Islamic Leaders</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 0.9rem;">Generated for Central Leadership Team</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">Data Period: March 2024 - July 2025</div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+        <script>
+            // Participation Chart
+            const participationCtx = document.getElementById('participationChart').getContext('2d');
+            new Chart(participationCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tarbiyah ISB', 'Tarbiyah PWR', 'Murabbi Training', 'Summer Camp', 'PW Murabbis', 'PW Batch 1', 'Study Circle', 'Summer Phase 1 & 2'],
+                    datasets: [{
+                        label: 'Registrations',
+                        data: [14, 70, 30, 60, 40, 1120, 35, 140],
+                        backgroundColor: 'rgba(49, 130, 206, 0.7)',
+                        borderColor: 'rgba(49, 130, 206, 1)',
+                        borderWidth: 2
+                    }, {
+                        label: 'Participants',
+                        data: [8, 42, 15, 25, 19, 170, 27, 45],
+                        backgroundColor: 'rgba(56, 161, 105, 0.7)',
+                        borderColor: 'rgba(56, 161, 105, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#333',
+                            font: {
+                                weight: 'bold',
+                                size: 11
+                            },
+                            formatter: function (value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Wasooli Trend Chart
+            const wasooliCtx = document.getElementById('wasooliChart').getContext('2d');
+            new Chart(wasooliCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mar 2024', 'Jun 2024', 'Jul 2024', 'Aug 2024', 'Nov 2024', 'Feb 2025', 'Apr 2025', 'Aug 2025'],
+                    datasets: [{
+                        label: 'Wasooli Rate %',
+                        data: [62.5, 14.3, 86.7, 48.0, 73.7, 27.6, 74.1, 44.4],
+                        borderColor: 'rgba(214, 158, 46, 1)',
+                        backgroundColor: 'rgba(214, 158, 46, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        datalabels: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            borderColor: 'rgba(214, 158, 46, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            color: '#333',
+                            font: {
+                                weight: 'bold',
+                                size: 10
+                            },
+                            padding: 4,
+                            formatter: function (value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function (value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Content Areas Chart
+            const contentCtx = document.getElementById('contentChart').getContext('2d');
+            new Chart(contentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Risala Study & Iqbal Poetry', 'Nizame Taleem & Secular System', 'IDS, Seerat & Islahi', 'Islam vs West Studies', 'Science + Islam'],
+                    datasets: [{
+                        data: [4, 2, 2, 1, 1],
+                        backgroundColor: [
+                            'rgba(49, 130, 206, 0.8)',
+                            'rgba(56, 161, 105, 0.8)',
+                            'rgba(159, 122, 234, 0.8)',
+                            'rgba(214, 158, 46, 0.8)',
+                            'rgba(236, 72, 153, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(49, 130, 206, 1)',
+                            'rgba(56, 161, 105, 1)',
+                            'rgba(159, 122, 234, 1)',
+                            'rgba(214, 158, 46, 1)',
+                            'rgba(236, 72, 153, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        datalabels: {
+                            color: 'white',
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            },
+                            formatter: function (value, context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return value + '\n(' + percentage + '%)';
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+
+            // Add smooth animations on scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all major elements
+            document.querySelectorAll('.kpi-card, .chart-container, .insight-card, .timeline-item').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+        </script>
+
+
+        
+</body>
+
+</html>
+
